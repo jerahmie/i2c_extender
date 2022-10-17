@@ -1,9 +1,9 @@
-//
+// i2c_extender module
 //
 //
 module i2c_extender (
-  input scl_in,
-  input sda_in,
+  input wire scl_in,
+  input wire sda_in,
   output reg scl_out,
   output reg sda_out1,
   output reg sda_out2
@@ -14,10 +14,10 @@ module i2c_extender (
 //reg sda_out1;
 //reg sda_out2;
 
-  always @(posedge scl_in) begin
-    scl_out = scl_in;
-    sda_out1 = sda_in;
-    sda_out2 = 0;
+  always @(scl_in) begin
+    scl_out <= scl_in;
+    sda_out1 <= sda_in;
+    sda_out2 <= 0;
   end
 
 endmodule
