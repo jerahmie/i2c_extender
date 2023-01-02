@@ -8,16 +8,14 @@ module i2c_extender (
   output reg sda_out1,
   output reg sda_out2
 );
-//wire scl_in;
-//wire sda_in;
-//reg scl_out
-//reg sda_out1;
-//reg sda_out2;
+
+  reg [0:7] data_buf [0:2];
+  
 
   always @(scl_in) begin
-    scl_out <= scl_in;
-    sda_out1 <= sda_in;
-    sda_out2 <= 0;
+    scl_out = scl_in;
+    sda_out1 = sda_in;
+    sda_out2 = 0;
   end
 
 endmodule
