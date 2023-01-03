@@ -16,7 +16,7 @@ module i2c_exdenter_tb_top;
   reg sda_out7;
   reg sda_out8;
 
-  i2c_extender UUT(scl_in, sda_in, sel, scl_out, sda_out1, sda_out2,
+  i2c_extender UUT(scl_in, sda_in, scl_out, sda_out1, sda_out2,
                    sda_out3, sda_out4, sda_out5, sda_out6, 
                    sda_out7, sda_out8); 
   integer i;
