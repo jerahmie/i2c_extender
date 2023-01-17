@@ -23,26 +23,27 @@ module i2c_start_stop(
   //assign sda_oe = 0;
   assign sda_out = 1;
   assign sda_in = sda;
-
+  reg data_rw; // controller_write = low, read is high
+  reg[6:0] i2c_address;  // i2c address of device
   reg [7:0] data_frame_buf;
-  reg [2:0] data_frame_count;
+  reg [3:0] data_frame_count;
   localparam [3:0]  // fsm states
    fsm_wait = 4'b0000,
    fsm_start1 = 4'b0001,
    fsm_start = 4'b0010,
-   fsm_read = 4'b0011,
-   fsm_read_wait = 4'b0100,
+   fsm_address_read = 4'b0011,
+   fsm_address_read_wait = 4'b0100,
    fsm_ack1 = 4'b0101,
    fsm_ack2 = 4'b0110;
 
-
-   reg [2:0] i2c_state, i2c_state_next;
+   reg [3:0] i2c_state, i2c_state_next;
 
   always @(posedge clk, posedge reset) begin
     if (reset == 1) begin
       i2c_state <= fsm_wait;
       i2c_state_next <= fsm_wait;
-      data_frame_count <= 3'b000;
+      data_frame_count <= 4'b0000;
+      data_frame_buf <= 8'h00;
       sda_oe <= 1'b0;
     end
     else begin
@@ -63,26 +64,30 @@ module i2c_start_stop(
        end // fsm_start1
        fsm_start: begin
         // scl pulled low after sda
-        i2c_state_next <= fsm_read;
-        //data_frame_count <= 3'b000;
+        i2c_state_next <= fsm_address_read;
+        data_frame_count <= 4'b0000;
        end // fsm_start
-       fsm_read: begin
+       fsm_address_read: begin
         // read address and r/w bit
         if (scl) begin
-          if ((i2c_state == fsm_read) && (i2c_state_next == fsm_read_wait)) begin
-            data_frame_count <= data_frame_count + 3'b001;
-          end
-          if (data_frame_count == 3'b111) begin
-            i2c_state_next <= fsm_ack1;
-          end else begin
-            data_frame_buf[data_frame_count] <= sda;
-            i2c_state_next <= fsm_read_wait;
-          end
+          // potentially move out of if (scl)...
+          data_frame_buf[data_frame_count[2:0]] <= sda;
+          i2c_state_next <= fsm_address_read_wait;
         end 
+        i2c_address <= data_frame_buf[6:0];
+        data_rw <= data_frame_buf[7];
       end // fsm_read
-      fsm_read_wait: begin
+      fsm_address_read_wait: begin
         if (!scl) begin
-          i2c_state_next <= fsm_read;
+          if ((i2c_state == fsm_address_read_wait) && (i2c_state_next == fsm_address_read)) begin
+            data_frame_count <= data_frame_count + 4'b0001;
+          end
+          if (data_frame_count == 4'd8) begin
+            //data_frame_buf[data_frame_count[2:0]] <= sda;
+            i2c_state_next <= fsm_ack1;
+          end else begin 
+            i2c_state_next <= fsm_address_read;
+          end
         end
       end // fsm_read_wait
       fsm_ack1: begin
@@ -93,6 +98,7 @@ module i2c_start_stop(
         sda_out <= 1'b1;
         i2c_state_next <= i2c_state; // hold at current state
       end // i2c_ack2
+  
       default:
         i2c_state_next <= i2c_state;
     endcase

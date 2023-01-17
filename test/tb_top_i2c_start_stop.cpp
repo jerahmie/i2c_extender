@@ -26,7 +26,7 @@ void i2c_send_data(const int data, Vi2c_start_stop* dut) {
   static int data_count = 1;
   std::cout << "data_count: " << data_count << '\n';
   if (dut->scl == 1) {
-    if (data_count < 128) {
+    if (data_count <= 128) {
       dut->sda = (data & data_count)? 1: 0;
       data_count*=2;
       std::cout << "data_count, sda: " << data_count << ',' << dut->sda << '\n';
@@ -48,7 +48,11 @@ int main(int argc, char** argv, char **env)
 
   // initialize testbench variables
   long posedge_count = 0;
-  int data = 0b0111111;
+  int data = 0b01101011;
+  // some devices addresses
+  int address1 = 0x65; 
+  int address2 = 0x66;
+  int address3 = 0x67; // 0b1100111
   dut->reset = 0;
   dut->clk = 0;
   dut->scl = 0;
@@ -70,17 +74,18 @@ int main(int argc, char** argv, char **env)
     if (posedge_count >= 40 and posedge_count < 50) {
       i2c_start(posedge_count, dut);
     }
-    if (posedge_count >= 60 and posedge_count < 250) {
+    if (posedge_count >= 60 and posedge_count < 220) {
       if ((posedge_count % 10 == 0) and (dut->clk == 1)) {
         dut->scl ^= 1;
-        i2c_send_data(data, dut);  
+        i2c_send_data(address3+0x80, dut);  
       }
     }
     dut->eval();
     m_trace->dump(sim_time);
     sim_time++;
   }
-
+  std::cout << "address3: " << address3 << '\n';
+  std::cout << "address3 << 1 + 1: " << std::hex << (address3 << 1) + 1 << '\n';
   std::cout << "Cleaning up...\n";
   m_trace->close();
   delete dut;
